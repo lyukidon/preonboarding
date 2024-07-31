@@ -1,22 +1,21 @@
-import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import * as Yup from 'yup';
-
-// styled component
 import styled from 'styled-components';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { signUpRequest } from '../utils/query';
+import { signUpSchema } from '../utils/yupSchema';
+import { useNavigate } from 'react-router-dom';
 
 const StyledSignUpForm = styled.form`
   width: 400px;
   margin: 40px auto;
   text-align: center;
+  justify-content: center;
+  align-items: center;
 `;
 
 const Input = styled.input`
   padding: 10px;
   border-radius: 5px;
-  border: none;
   margin-bottom: 20px;
 
   :focus {
@@ -40,37 +39,25 @@ const ErrorMsg = styled.p`
   color: red;
 `;
 
-// Validation Schema
-const schema = Yup.object().shape({
-  id: Yup.string()
-    .min(3, "3자리 이상 작성해주세요.")
-    .required('이메일을 입력해주세요.'),
-  password: Yup.string()
-    .min(6, '비밀번호는 최소 6자리 이상이어야합니다.').oneOf(
-      [Yup.ref('password'), undefined],
-      '비밀번호가 일치하지 않습니다.',
-    )
-    .required('비밀번호를 입력해주세요.'),
-  nickname: Yup.string()
-    .min(2, "닉네임을 2글자 이상 작성해주세요.")
-    .required("닉네임을 입력해주세요."),
-  confirmPassword: Yup.string()
-    .required('비밀번호 확인을 입력해주세요.'),
-});
-
 function SignUp() {
+  const navigate = useNavigate()
+
   const { register, handleSubmit, formState: { errors } } = useForm({
-    resolver: yupResolver(schema),
+    resolver: yupResolver(signUpSchema),
     mode: 'onChange',
   });
 
   const onSubmit = async (data:any) => {
     try {
-      const signUp = await signUpRequest({
+      const signUpResult = await signUpRequest({
         id: data.id, 
         password: data.password,
         nickname: data.nickname
       })
+      if (signUpResult!.success) {
+        alert('회원가입이 완료되었습니다.');
+        navigate("/sign_in");
+      }
     } catch (error) {
       console.error(error)
     }
@@ -78,35 +65,43 @@ function SignUp() {
 
   return (
     <StyledSignUpForm onSubmit={handleSubmit(onSubmit)}>
-      <Input
-        type="text"
-        {...register('id')}
-        placeholder="아이디"
-      />
-      {errors.id && <ErrorMsg>{errors.id.message}</ErrorMsg>}
+      <div>
+        아이디:
+        <Input
+          type="text"
+          {...register('id')}
+          placeholder="아이디"
+        />
+        {errors.id && <ErrorMsg>{errors.id.message}</ErrorMsg>}
+      </div>
+      <div>
+        비밀번호:
+        <Input
+          type="password"
+          {...register('password')}
+          placeholder="비밀번호"
+        />
+        {errors.password && <ErrorMsg>{errors.password.message}</ErrorMsg>}
 
-      <Input
-        type="password"
-        {...register('password')}
-        placeholder="비밀번호"
-      />
-      {errors.password && <ErrorMsg>{errors.password.message}</ErrorMsg>}
-
-
-      <Input
-        type="password"
-        {...register('confirmPassword')}
-        placeholder="비밀번호 확인"
-      />
-      {errors.confirmPassword && <ErrorMsg>{errors.confirmPassword.message}</ErrorMsg>}
-
-      <Input
-        type="text"
-        {...register("nickname")}
-        placeholder='닉네임'
-      />
-      {errors.nickname && <ErrorMsg>{errors.nickname.message}</ErrorMsg>}
-
+      </div>
+      <div>
+        비밀번호 확인:
+        <Input
+          type="password"
+          {...register('confirmPassword')}
+          placeholder="비밀번호 확인"
+        />
+        {errors.confirmPassword && <ErrorMsg>{errors.confirmPassword.message}</ErrorMsg>}
+      </div>
+      <div>
+        닉네임:
+        <Input
+          type="text"
+          {...register("nickname")}
+          placeholder='닉네임'
+        />
+        {errors.nickname && <ErrorMsg>{errors.nickname.message}</ErrorMsg>}
+      </div>
       <Button type="submit">회원가입</Button>
     </StyledSignUpForm>
   );

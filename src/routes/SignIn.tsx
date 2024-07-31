@@ -1,9 +1,10 @@
-import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import * as Yup from 'yup';
 import styled from 'styled-components';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { signInRequest } from '../utils/query';
+import { signInSchema } from '../utils/yupSchema';
+import { useUserStore } from '../store/store'
+import { useNavigate } from 'react-router-dom';
 
 const StyledSignInForm = styled.form`
   width: 400px;
@@ -52,26 +53,30 @@ const Button = styled.button`
   }
 `;
 
-// Validation Schema
-const schema = Yup.object().shape({
-  id: Yup.string()
-    .min(3, "3자리 이상 작성해주세요.")
-    .required('이메일을 입력해주세요.'),
-  password: Yup.string()
-    .min(6, '비밀번호는 최소 6자리 이상이어야합니다.')
-    .required('비밀번호를 입력해주세요.'),
-});
-
 function SignIn() {
+  const {setToken, setUser} = useUserStore()
+  const navigate = useNavigate()
+
   const { register, handleSubmit, formState: { errors } } = useForm({
-    resolver: yupResolver(schema),
+    resolver: yupResolver(signInSchema),
     mode: 'onChange',
   });
 
   const onSubmit = async (data: any) => {
     try {
       const signIn = await signInRequest(data);
-      console.log(signIn);
+      if (!signIn){
+        throw new Error("로그인 에러");
+      }
+
+      const {accessToken, avatar, nickname, userId, success} = signIn
+      if (success){
+        setToken(accessToken)
+        setUser({
+          avatar, nickname, userId,
+        })
+        navigate("/")
+      }
     } catch (error) {
       console.error(error);
     }
